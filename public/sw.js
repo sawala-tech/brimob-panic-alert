@@ -94,7 +94,7 @@ self.addEventListener('fetch', (event) => {
 
 // Push Event - Handle incoming push notifications
 self.addEventListener('push', (event) => {
-  console.log('[Service Worker] Push notification received');
+  console.log('[Service Worker] 🚨 Push notification received');
   
   let notificationData = {
     title: '🚨 PANIC ALERT - BRIMOB',
@@ -160,44 +160,86 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(
     (async () => {
-      // Show notification first
-      await self.registration.showNotification(notificationData.title, notificationData);
-      console.log('[Service Worker] Notification displayed successfully');
+      console.log('[Service Worker] 🚨 AGGRESSIVE AUTO-OPEN STARTED');
       
-      // Auto-open app after notification (if supported)
-      if (notificationData with auto_alert parameter
-  const urlToOpen = event.notification.data?.url || '/user?auto_alert=true';
-  
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
-        // Check if app is already open
-        for (let client of clientList) {
-          if (client.url.includes('/user') && 'focus' in client) {
-            // Focus existing window
-            client.focus();
-            // Send message to trigger alert
-            client.postMessage({
-              type: 'PANIC_ALERT',
-              data: event.notification.data
-            });
-            returnndow) {
-            await self.clients.openWindow('/user?auto_alert=true');
-          }
-        } else {
-          // App already open - just focus and navigate
-          console.log('[Service Worker] Focusing existing window...');
-          const client = clients[0];
+      // STEP 1: IMMEDIATELY OPEN/FOCUS APP (WhatsApp-like behavior)
+      // This runs BEFORE showing notification for instant app opening
+      const clients = await self.clients.matchAll({ 
+        type: 'window', 
+        includeUncontrolled: true 
+      });
+      
+      let appOpened = false;
+      
+      // Check if app already open
+      for (let client of clients) {
+        if (client.url.includes('/user')) {
+          console.log('[Service Worker] ✅ App already open - FORCING FOCUS');
+          // Focus the existing window IMMEDIATELY
           if ('focus' in client) {
             await client.focus();
           }
-          // Send message to client to trigger alert
+          // Send PANIC_ALERT message to trigger alert
           client.postMessage({
             type: 'PANIC_ALERT',
-            data: notificationData.data
+            data: notificationData.data,
+            forceOpen: true
           });
+          appOpened = true;
+          break;
         }
       }
+      
+      // If no app open, OPEN IT NOW (before notification)
+      if (!appOpened && self.clients.openWindow) {
+        console.log('[Service Worker] 🚀 OPENING NEW WINDOW IMMEDIATELY');
+        try {
+          const newClient = await self.clients.openWindow('/user?auto_alert=true');
+          if (newClient) {
+            console.log('[Service Worker] ✅ New window opened successfully');
+            appOpened = true;
+            // Give window a moment to load, then send message
+            setTimeout(() => {
+              newClient.postMessage({
+                type: 'PANIC_ALERT',
+                data: notificationData.data,
+                forceOpen: true
+              });
+            }, 500);
+          }
+        } catch (error) {
+          console.error('[Service Worker] ❌ Failed to open window:', error);
+        }
+      }
+      
+      // STEP 2: Show notification AFTER opening app
+      // This ensures app opens first (like WhatsApp)
+      await self.registration.showNotification(notificationData.title, notificationData);
+      console.log('[Service Worker] ✅ Notification shown (after app opened)');
+      
+      // STEP 3: Keep trying to focus for next 2 seconds (aggressive)
+      // This handles race conditions where window might not be ready
+      if (appOpened) {
+        for (let i = 0; i < 4; i++) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const clientsAgain = await self.clients.matchAll({ 
+            type: 'window', 
+            includeUncontrolled: true 
+          });
+          for (let client of clientsAgain) {
+            if (client.url.includes('/user') && 'focus' in client) {
+              client.focus();
+              client.postMessage({
+                type: 'PANIC_ALERT',
+                data: notificationData.data,
+                forceOpen: true
+              });
+            }
+          }
+        }
+      }
+      
+      console.log('[Service Worker] 🎯 AGGRESSIVE AUTO-OPEN COMPLETE');
     })()
   );
 });

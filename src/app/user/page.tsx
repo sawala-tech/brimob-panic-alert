@@ -90,9 +90,40 @@ function UserDashboard() {
   // Listen for Service Worker messages (auto-alert trigger)
   useEffect(() => {
     const handleServiceWorkerMessage = (event: MessageEvent) => {
-      console.log('[User Page] Service Worker message:', event.data);
+      console.log('[User Page] 🚨 Service Worker message:', event.data);
 
       if (event.data && event.data.type === 'PANIC_ALERT') {
+        // AGGRESSIVE FOCUS: Force window to foreground
+        if (typeof window !== 'undefined') {
+          // Try to focus the window (WhatsApp-like behavior)
+          window.focus();
+          
+          // Request notification permission if not granted (shouldn't happen, but just in case)
+          if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+          }
+          
+          // Play audio alert if available
+          try {
+            const audio = new Audio('/alert-sound.mp3');
+            audio.volume = 1.0;
+            audio.play().catch(console.error);
+          } catch (e) {
+            console.warn('Audio playback not supported or failed');
+          }
+          
+          // Vibrate device if supported (mobile)
+          if ('vibrate' in navigator) {
+            navigator.vibrate([
+              500, 200, 500, 200, 500, 200,
+              1000, 500,
+              500, 200, 500, 200, 500, 200,
+              1000, 500,
+              500, 200, 500, 200, 500
+            ]);
+          }
+        }
+        
         // Trigger alert from Service Worker message
         const alertData: AlertMessage = {
           type: 'panic_alert',
@@ -103,7 +134,7 @@ function UserDashboard() {
           severity: 'critical',
         };
 
-        console.log('[User Page] Triggering alert from Service Worker');
+        console.log('[User Page] ✅ Triggering alert from Service Worker');
         setActiveAlert(alertData);
 
         setAlerts((prevAlerts) => {
@@ -131,7 +162,32 @@ function UserDashboard() {
     const autoAlert = searchParams.get('auto_alert');
 
     if (autoAlert === 'true') {
-      console.log('[User Page] Auto-alert triggered from URL');
+      console.log('[User Page] 🚀 Auto-alert triggered from URL - AGGRESSIVE MODE');
+      
+      // FORCE WINDOW TO FOREGROUND (WhatsApp-like)
+      if (typeof window !== 'undefined') {
+        window.focus();
+        
+        // Try to play sound immediately
+        try {
+          const audio = new Audio('/alert-sound.mp3');
+          audio.volume = 1.0;
+          audio.play().catch(console.error);
+        } catch (e) {
+          console.warn('Audio playback not supported');
+        }
+        
+        // Vibrate immediately
+        if ('vibrate' in navigator) {
+          navigator.vibrate([
+            500, 200, 500, 200, 500, 200,
+            1000, 500,
+            500, 200, 500, 200, 500, 200,
+            1000, 500,
+            500, 200, 500, 200, 500
+          ]);
+        }
+      }
 
       // Check if there's recent alert in localStorage
       const stored = localStorage.getItem(ALERTS_STORAGE_KEY);
@@ -145,7 +201,7 @@ function UserDashboard() {
 
             // Only show if alert is less than 30 seconds old
             if (alertAge < 30000) {
-              console.log('[User Page] Showing recent alert:', latestAlert);
+              console.log('[User Page] ✅ Showing recent alert:', latestAlert);
               setActiveAlert(latestAlert);
             }
           }
@@ -370,14 +426,16 @@ function UserDashboard() {
 
 export default function UserPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">⏳</div>
-          <p className="text-white text-xl">Loading...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-6xl mb-4">⏳</div>
+            <p className="text-white text-xl">Loading...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <UserDashboard />
     </Suspense>
   );
