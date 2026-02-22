@@ -19,17 +19,45 @@ function getAudioContext(): AudioContext {
 }
 
 /**
+ * Initialize and unlock audio context (call this on user interaction)
+ */
+export async function initAudio(): Promise<boolean> {
+  try {
+    const ctx = getAudioContext();
+
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+      console.log('[Audio] Context resumed successfully');
+    }
+
+    // Play silent sound to unlock audio (iOS fix)
+    const buffer = ctx.createBuffer(1, 1, 22050);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start();
+
+    console.log('[Audio] Audio context initialized and unlocked');
+    return true;
+  } catch (error) {
+    console.error('[Audio] Failed to initialize audio:', error);
+    return false;
+  }
+}
+
+/**
  * Play siren sound dengan pola naik-turun
  */
-export function playSiren(): void {
+export async function playSiren(): Promise<void> {
   if (isPlaying) return;
 
   try {
     const ctx = getAudioContext();
-    
-    // Resume context jika suspended (autoplay policy)
+
+    // Force resume context (autoplay policy)
     if (ctx.state === 'suspended') {
-      ctx.resume();
+      await ctx.resume();
+      console.log('[Audio] Context resumed');
     }
 
     // Create oscillator
@@ -43,17 +71,20 @@ export function playSiren(): void {
     oscillator.frequency.value = 800;
     oscillator.type = 'sine';
 
-    // Set volume
-    gainNode.gain.value = 0.3;
+    // Set volume (louder for alert)
+    gainNode.gain.value = 0.5;
 
     // Start oscillator
     oscillator.start();
     isPlaying = true;
 
+    console.log('[Audio] Siren started successfully');
+
     // Animate frequency untuk efek siren (naik-turun)
     animateSirenFrequency();
   } catch (error) {
     console.error('Error playing siren:', error);
+    throw error;
   }
 }
 
@@ -65,7 +96,7 @@ function animateSirenFrequency(): void {
 
   const ctx = getAudioContext();
   const currentTime = ctx.currentTime;
-  
+
   // Pattern: 800Hz -> 1200Hz -> 800Hz (cycle 1 detik)
   oscillator.frequency.setValueAtTime(800, currentTime);
   oscillator.frequency.linearRampToValueAtTime(1200, currentTime + 0.5);
@@ -114,7 +145,7 @@ export function isSirenPlaying(): boolean {
 export function playBeep(duration: number = 200): void {
   try {
     const ctx = getAudioContext();
-    
+
     if (ctx.state === 'suspended') {
       ctx.resume();
     }

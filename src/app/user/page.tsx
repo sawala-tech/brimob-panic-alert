@@ -13,6 +13,7 @@ import {
   subscribeToPushNotifications,
   getConnectionStatus,
 } from '@/lib/panic-alert-service';
+import { initAudio } from '@/lib/audio';
 import Header from '@/components/Header';
 import AlertOverlay from '@/components/AlertOverlay';
 import AlertHistory from '@/components/AlertHistory';
@@ -34,6 +35,38 @@ function UserDashboard() {
   useEffect(() => {
     initAuth();
   }, [initAuth]);
+
+  // Initialize audio on page load (unlock audio context)
+  useEffect(() => {
+    // Wait for user interaction to unlock audio
+    const unlockAudio = async () => {
+      try {
+        await initAudio();
+        console.log('[User Page] ✅ Audio context unlocked');
+      } catch (error) {
+        console.warn('[User Page] Audio unlock failed:', error);
+      }
+    };
+
+    // Try to unlock on any user interaction
+    const handleInteraction = () => {
+      unlockAudio();
+      // Remove listeners after first interaction
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('touchstart', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+    };
+
+    document.addEventListener('click', handleInteraction);
+    document.addEventListener('touchstart', handleInteraction);
+    document.addEventListener('keydown', handleInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('touchstart', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+    };
+  }, []);
 
   // Load alerts from localStorage
   useEffect(() => {

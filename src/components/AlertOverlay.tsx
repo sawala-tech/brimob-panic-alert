@@ -22,22 +22,30 @@ export default function AlertOverlay({ alert, onAcknowledge }: AlertOverlayProps
   useEffect(() => {
     // WHATSAPP-LIKE EXPERIENCE: Fullscreen takeover with continuous ringing
 
-    // 1. Play siren sound using Web Audio API (existing audio.ts)
-    try {
-      playSiren();
-      console.log('[Alert] Siren started - WhatsApp call mode');
+    // 1. FORCE play siren sound - try aggressively
+    const startAudio = async () => {
+      try {
+        console.log('[Alert] Attempting to start siren...');
+        await playSiren();
+        console.log('[Alert] ✅ Siren started successfully');
 
-      // Check if siren is playing
-      setTimeout(() => {
-        if (!isSirenPlaying()) {
-          setAutoplayBlocked(true);
-          console.warn('[Alert] Autoplay may be blocked');
-        }
-      }, 200);
-    } catch (error) {
-      console.error('[Alert] Audio error:', error);
-      setAutoplayBlocked(true);
-    }
+        // Double check after a moment
+        setTimeout(() => {
+          if (!isSirenPlaying()) {
+            console.warn('[Alert] ⚠️ Siren not playing - autoplay blocked');
+            setAutoplayBlocked(true);
+          } else {
+            console.log('[Alert] ✅ Siren confirmed playing');
+            setAutoplayBlocked(false);
+          }
+        }, 300);
+      } catch (error) {
+        console.error('[Alert] ❌ Failed to start siren:', error);
+        setAutoplayBlocked(true);
+      }
+    };
+
+    startAudio();
 
     // 2. Continuous vibration (mobile)
     if ('vibrate' in navigator) {
@@ -78,14 +86,20 @@ export default function AlertOverlay({ alert, onAcknowledge }: AlertOverlayProps
     };
   }, []);
 
-  const handleToggleSound = () => {
-    if (isMuted) {
-      playSiren();
-      setIsMuted(false);
-      setAutoplayBlocked(false);
-    } else {
-      stopSiren();
-      setIsMuted(true);
+  const handleToggleSound = async () => {
+    try {
+      if (isMuted) {
+        await playSiren();
+        setIsMuted(false);
+        setAutoplayBlocked(false);
+        console.log('[Alert] Sound unmuted and playing');
+      } else {
+        stopSiren();
+        setIsMuted(true);
+        console.log('[Alert] Sound muted');
+      }
+    } catch (error) {
+      console.error('[Alert] Error toggling sound:', error);
     }
   };
 
@@ -187,9 +201,9 @@ export default function AlertOverlay({ alert, onAcknowledge }: AlertOverlayProps
           {autoplayBlocked && (
             <button
               onClick={handleToggleSound}
-              className="px-6 py-3 bg-red-800 text-white rounded-full font-semibold hover:bg-red-700 transition-all shadow-lg"
+              className="px-8 py-4 bg-yellow-500 hover:bg-yellow-600 text-black rounded-full font-bold text-lg hover:scale-105 transition-all shadow-2xl animate-pulse"
             >
-              🔊 Aktifkan Suara
+              🔊 TAP UNTUK AKTIFKAN SUARA
             </button>
           )}
         </div>
