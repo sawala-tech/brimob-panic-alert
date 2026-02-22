@@ -17,6 +17,7 @@ import { playSiren } from '@/lib/audio';
 import Header from '@/components/Header';
 import AlertOverlay from '@/components/AlertOverlay';
 import AlertHistory from '@/components/AlertHistory';
+import InstallPrompt from '@/components/InstallPrompt';
 
 const ALERTS_STORAGE_KEY = 'brimob_user_alerts';
 
@@ -88,6 +89,39 @@ function UserDashboard() {
     };
   }, []);
 
+  // Handle page visibility change - play siren when page becomes visible
+  useEffect(() => {
+    let pendingSiren = false;
+
+    const handleVisibilityChange = async () => {
+      console.log('[User Page] Visibility changed:', document.visibilityState);
+
+      if (!document.hidden && pendingSiren) {
+        console.log('[User Page] 🔊 Page now visible - playing pending siren!');
+        try {
+          await playSiren();
+          pendingSiren = false;
+        } catch (e) {
+          console.error('Failed to play siren on visibility change:', e);
+        }
+      }
+    };
+
+    // Store pending siren flag globally so Service Worker message can set it
+    (window as any).__pendingSiren = () => {
+      pendingSiren = true;
+      if (!document.hidden) {
+        handleVisibilityChange();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   // Listen for Service Worker messages (auto-alert trigger)
   useEffect(() => {
     const handleServiceWorkerMessage = async (event: MessageEvent) => {
@@ -131,9 +165,22 @@ function UserDashboard() {
           // Play siren using Web Audio API
           try {
             console.log('[User Page] 🔊 Playing siren from Service Worker trigger');
-            await playSiren();
+            console.log('[User Page] Document hidden?', document.hidden);
+            console.log('[User Page] Document visibility:', document.visibilityState);
+
+            if (document.hidden) {
+              // Page is in background - set pending flag
+              console.log('[User Page] ⏳ Page hidden - will play siren when visible');
+              if ((window as any).__pendingSiren) {
+                (window as any).__pendingSiren();
+              }
+            } else {
+              // Page is visible - play immediately
+              await playSiren();
+              console.log('✅ Siren playing immediately');
+            }
           } catch (e) {
-            console.warn('Failed to play siren:', e);
+            console.error('❌ Failed to play siren:', e);
           }
 
           // Vibrate device if supported (mobile)
@@ -437,6 +484,9 @@ function UserDashboard() {
 
       {/* Alert Overlay */}
       {activeAlert && <AlertOverlay alert={activeAlert} onAcknowledge={handleAcknowledge} />}
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
     </div>
   );
 }
