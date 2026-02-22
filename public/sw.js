@@ -103,10 +103,18 @@ self.addEventListener('push', (event) => {
     badge: '/badge-72.png',
     tag: 'panic-alert',
     requireInteraction: true,
-    vibrate: [200, 100, 200, 100, 200, 100, 400],
+    // Extended vibration pattern (5 seconds total)
+    vibrate: [
+      500, 200, 500, 200, 500, 200,  // 3 burst
+      1000, 500,                      // pause
+      500, 200, 500, 200, 500, 200,  // 3 burst
+      1000, 500,                      // pause
+      500, 200, 500, 200, 500         // final burst
+    ],
     data: {
-      url: '/user',
-      timestamp: Date.now()
+      url: '/user?auto_alert=true',
+      timestamp: Date.now(),
+      autoOpen: true
     }
   };
 
@@ -120,12 +128,23 @@ self.addEventListener('push', (event) => {
         badge: data.badge || notificationData.badge,
         tag: data.tag || notificationData.tag,
         requireInteraction: true,
-        vibrate: [200, 100, 200, 100, 200, 100, 400],
-        data: data.data || data,
+        vibrate: [
+          500, 200, 500, 200, 500, 200,
+          1000, 500,
+          500, 200, 500, 200, 500, 200,
+          1000, 500,
+          500, 200, 500, 200, 500
+        ],
+        data: {
+          ...data.data,
+          url: '/user?auto_alert=true',
+          autoOpen: true,
+          timestamp: Date.now()
+        },
         actions: [
           {
-            action: 'view',
-            title: 'Lihat Detail',
+            action: 'open',
+            title: '🚨 Buka Sekarang',
             icon: '/icon-192.png'
           },
           {
@@ -140,18 +159,46 @@ self.addEventListener('push', (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(notificationData.title, notificationData)
-      .then(() => {
-        console.log('[Service Worker] Notification displayed successfully');
-        
-        // Play sound (if browser supports)
-        if (self.registration.getNotifications) {
-          playSiren();
+    (async () => {
+      // Show notification first
+      await self.registration.showNotification(notificationData.title, notificationData);
+      console.log('[Service Worker] Notification displayed successfully');
+      
+      // Auto-open app after notification (if supported)
+      if (notificationData with auto_alert parameter
+  const urlToOpen = event.notification.data?.url || '/user?auto_alert=true';
+  
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Check if app is already open
+        for (let client of clientList) {
+          if (client.url.includes('/user') && 'focus' in client) {
+            // Focus existing window
+            client.focus();
+            // Send message to trigger alert
+            client.postMessage({
+              type: 'PANIC_ALERT',
+              data: event.notification.data
+            });
+            returnndow) {
+            await self.clients.openWindow('/user?auto_alert=true');
+          }
+        } else {
+          // App already open - just focus and navigate
+          console.log('[Service Worker] Focusing existing window...');
+          const client = clients[0];
+          if ('focus' in client) {
+            await client.focus();
+          }
+          // Send message to client to trigger alert
+          client.postMessage({
+            type: 'PANIC_ALERT',
+            data: notificationData.data
+          });
         }
-      })
-      .catch((error) => {
-        console.error('[Service Worker] Error showing notification:', error);
-      })
+      }
+    })()
   );
 });
 

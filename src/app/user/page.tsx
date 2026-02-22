@@ -5,7 +5,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { AlertMessage } from '@/types';
 import { 
@@ -22,6 +22,7 @@ const ALERTS_STORAGE_KEY = 'brimob_user_alerts';
 export default function UserPage() {
   const { user, isAuthenticated, initAuth } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [alerts, setAlerts] = useState<AlertMessage[]>([]);
   const [activeAlert, setActiveAlert] = useState<AlertMessage | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
@@ -83,6 +84,80 @@ export default function UserPage() {
       clearInterval(statusInterval);
     };
   }, []);
+
+  // Listen for Service Worker messages (auto-alert trigger)
+  useEffect(() => {
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      console.log('[User Page] Service Worker message:', event.data);
+      
+      if (event.data && event.data.type === 'PANIC_ALERT') {
+        // Trigger alert from Service Worker message
+        const alertData: AlertMessage = {
+          type: 'panic_alert',
+          id: Date.now().toString(),
+          message: '🚨 PANIC ALERT - SITUASI DARURAT',
+          location: 'Command Center',
+          timestamp: new Date().toISOString(),
+          severity: 'critical'
+        };
+        
+        console.log('[User Page] Triggering alert from Service Worker');
+        setActiveAlert(alertData);
+        
+        setAlerts(prevAlerts => {
+          const updatedAlerts = [alertData, ...prevAlerts];
+          localStorage.setItem(ALERTS_STORAGE_KEY, JSON.stringify(updatedAlerts));
+          return updatedAlerts;
+        });
+      }
+    };
+
+    // Register Service Worker message listener
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+    }
+
+    return () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+      }
+    };
+  }, []);
+
+  // Check for auto_alert query parameter (from push notification)
+  useEffect(() => {
+    const autoAlert = searchParams.get('auto_alert');
+    
+    if (autoAlert === 'true') {
+      console.log('[User Page] Auto-alert triggered from URL');
+      
+      // Check if there's recent alert in localStorage
+      const stored = localStorage.getItem(ALERTS_STORAGE_KEY);
+      if (stored) {
+        try {
+          const storedAlerts = JSON.parse(stored);
+          if (storedAlerts.length > 0) {
+            // Show most recent alert
+            const latestAlert = storedAlerts[0];
+            const alertAge = Date.now() - new Date(latestAlert.timestamp).getTime();
+            
+            // Only show if alert is less than 30 seconds old
+            if (alertAge < 30000) {
+              console.log('[User Page] Showing recent alert:', latestAlert);
+              setActiveAlert(latestAlert);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading recent alert:', error);
+        }
+      }
+      
+      // Clean URL (remove auto_alert parameter)
+      const url = new URL(window.location.href);
+      url.searchParams.delete('auto_alert');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
 
   // Request notification permission and subscribe to push
   useEffect(() => {
