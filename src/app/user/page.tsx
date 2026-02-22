@@ -96,7 +96,7 @@ function UserDashboard() {
         // MAXIMUM AGGRESSIVE FOCUS: Force window to foreground
         if (typeof window !== 'undefined') {
           console.log('[User Page] 💪 FORCING WINDOW TO FOREGROUND - MAXIMUM MODE');
-          
+
           // Try to focus the window MULTIPLE times
           for (let i = 0; i < 10; i++) {
             setTimeout(() => {
@@ -109,11 +109,11 @@ function UserDashboard() {
           try {
             // Method 1: Standard focus
             window.focus();
-            
+
             // Method 2: Blur then focus (sometimes helps)
             window.blur();
             setTimeout(() => window.focus(), 50);
-            
+
             // Method 3: Alert the tab (browser shows it in tab switcher)
             if (document.hidden) {
               console.log('[User Page] ⚠️ Page is hidden - trying to alert user');

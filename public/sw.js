@@ -1,19 +1,13 @@
 // Service Worker for BRIMOB Panic Alert System
 const CACHE_NAME = 'brimob-panic-v1';
-const OFFLINE_URL = '/offline';
 
-// Assets to cache on install
+// Assets to cache on install - only cache what exists
 const ASSETS_TO_CACHE = [
   '/',
-  '/admin',
-  '/user',
-  '/offline',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/manifest.json'
 ];
 
-// Install Event - Cache static assets
+// Install Event - Cache static assets with error handling
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing...');
   
@@ -21,10 +15,21 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('[Service Worker] Caching static assets');
-        return cache.addAll(ASSETS_TO_CACHE.filter(url => url !== '/offline'));
+        // Cache assets individually to avoid failure if one is missing
+        return Promise.allSettled(
+          ASSETS_TO_CACHE.map(url => {
+            return cache.add(url).catch(error => {
+              console.warn(`[Service Worker] Failed to cache ${url}:`, error.message);
+              return null;
+            });
+          })
+        );
+      })
+      .then(() => {
+        console.log('[Service Worker] Installation complete');
       })
       .catch((error) => {
-        console.error('[Service Worker] Cache installation failed:', error);
+        console.error('[Service Worker] Cache installation error:', error);
       })
   );
   
@@ -83,9 +88,12 @@ self.addEventListener('fetch', (event) => {
             if (response) {
               return response;
             }
-            // Return offline page for navigation requests
+            // Return a basic error response for navigation requests
             if (event.request.mode === 'navigate') {
-              return caches.match(OFFLINE_URL);
+              return new Response(
+                '<html><body><h1>Offline</h1><p>Please check your connection.</p></body></html>',
+                { headers: { 'Content-Type': 'text/html' } }
+              );
             }
           });
       })
