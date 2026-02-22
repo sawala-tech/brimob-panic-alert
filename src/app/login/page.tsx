@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { unlockAudio } from '@/lib/audio';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -41,6 +42,10 @@ export default function LoginPage() {
     const success = login(username, password);
 
     if (success) {
+      // Unlock audio context setelah login
+      await unlockAudio();
+      console.log('✅ Audio unlocked after login');
+      
       const currentUser = useAuthStore.getState().user;
       const redirectPath = currentUser?.role === 'admin' ? '/admin' : '/user';
       router.push(redirectPath);

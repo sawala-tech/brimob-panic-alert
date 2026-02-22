@@ -44,7 +44,7 @@ export async function unlockAudio(): Promise<void> {
 /**
  * Play siren sound dengan pola naik-turun
  */
-export function playSiren(): void {
+export async function playSiren(): Promise<void> {
   if (isPlaying) return;
 
   try {
@@ -52,7 +52,9 @@ export function playSiren(): void {
 
     // Resume context jika suspended (autoplay policy)
     if (ctx.state === 'suspended') {
-      ctx.resume();
+      console.log('🔊 Resuming audio context...');
+      await ctx.resume();
+      console.log('✅ Audio context resumed, state:', ctx.state);
     }
 
     // Create oscillator
@@ -72,11 +74,13 @@ export function playSiren(): void {
     // Start oscillator
     oscillator.start();
     isPlaying = true;
+    
+    console.log('🚨 Siren started playing!');
 
     // Animate frequency untuk efek siren (naik-turun)
     animateSirenFrequency();
   } catch (error) {
-    console.error('Error playing siren:', error);
+    console.error('❌ Error playing siren:', error);
   }
 }
 

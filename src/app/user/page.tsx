@@ -13,7 +13,6 @@ import {
   subscribeToPushNotifications,
   getConnectionStatus,
 } from '@/lib/panic-alert-service';
-import { unlockAudio } from '@/lib/audio';
 import Header from '@/components/Header';
 import AlertOverlay from '@/components/AlertOverlay';
 import AlertHistory from '@/components/AlertHistory';
@@ -35,23 +34,6 @@ function UserDashboard() {
   useEffect(() => {
     initAuth();
   }, [initAuth]);
-
-  // Unlock audio on first user interaction
-  useEffect(() => {
-    const handleFirstInteraction = () => {
-      unlockAudio();
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('touchstart', handleFirstInteraction);
-    };
-
-    document.addEventListener('click', handleFirstInteraction);
-    document.addEventListener('touchstart', handleFirstInteraction);
-
-    return () => {
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('touchstart', handleFirstInteraction);
-    };
-  }, []);
 
   // Load alerts from localStorage
   useEffect(() => {
