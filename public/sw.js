@@ -98,18 +98,18 @@ self.addEventListener('push', (event) => {
   
   let notificationData = {
     title: '🚨 PANIC ALERT - BRIMOB',
-    body: 'Emergency alert activated!',
+    body: '⚠️ SITUASI DARURAT! Klik untuk membuka',
     icon: '/icon-192.png',
     badge: '/badge-72.png',
     tag: 'panic-alert',
-    requireInteraction: true,
-    // Extended vibration pattern (5 seconds total)
+    requireInteraction: true, // Cannot be dismissed without interaction
+    silent: false, // Play sound
+    renotify: true, // Alert even if notification exists
+    // Continuous vibration pattern (like incoming call)
     vibrate: [
-      500, 200, 500, 200, 500, 200,  // 3 burst
-      1000, 500,                      // pause
-      500, 200, 500, 200, 500, 200,  // 3 burst
-      1000, 500,                      // pause
-      500, 200, 500, 200, 500         // final burst
+      1000, 500, 1000, 500, 1000, 500,  // Long vibrations
+      1000, 500, 1000, 500, 1000, 500,
+      1000, 500, 1000, 500, 1000
     ],
     data: {
       url: '/user?auto_alert=true',
@@ -123,17 +123,17 @@ self.addEventListener('push', (event) => {
       const data = event.data.json();
       notificationData = {
         title: data.title || notificationData.title,
-        body: data.body || data.message || notificationData.body,
+        body: data.body || data.message || '⚠️ SITUASI DARURAT! Klik untuk membuka',
         icon: data.icon || notificationData.icon,
         badge: data.badge || notificationData.badge,
         tag: data.tag || notificationData.tag,
-        requireInteraction: true,
+        requireInteraction: true, // Cannot be dismissed easily
+        silent: false,
+        renotify: true,
         vibrate: [
-          500, 200, 500, 200, 500, 200,
-          1000, 500,
-          500, 200, 500, 200, 500, 200,
-          1000, 500,
-          500, 200, 500, 200, 500
+          1000, 500, 1000, 500, 1000, 500,
+          1000, 500, 1000, 500, 1000, 500,
+          1000, 500, 1000, 500, 1000
         ],
         data: {
           ...data.data,
@@ -144,7 +144,7 @@ self.addEventListener('push', (event) => {
         actions: [
           {
             action: 'open',
-            title: '🚨 Buka Sekarang',
+            title: '🚨 BUKA SEKARANG',
             icon: '/icon-192.png'
           },
           {
@@ -160,66 +160,101 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(
     (async () => {
-      console.log('[Service Worker] 🚨 WHATSAPP-LIKE AUTO-OPEN INITIATED');
+      console.log('[Service Worker] 🚨 FORCE OPEN - MAXIMUM AGGRESSION MODE');
       
-      // STRATEGY: Show notification WITH immediate auto-click to open app
-      // This is more reliable than trying to open before notification
+      // AGGRESSIVE STRATEGY: Try EVERYTHING to open the app
       
-      // Show notification FIRST (with auto-open flag)
-      await self.registration.showNotification(notificationData.title, notificationData);
-      console.log('[Service Worker] ✅ Notification shown');
+      // STEP 1: Try to open window IMMEDIATELY (before notification)
+      let windowOpened = false;
       
-      // IMMEDIATELY try to open/focus app (within 100ms)
-      const clients = await self.clients.matchAll({ 
-        type: 'window', 
-        includeUncontrolled: true 
-      });
-      
-      let appOpened = false;
-      
-      // Try to focus existing window first
-      for (let client of clients) {
-        if (client.url.includes('/user')) {
-          console.log('[Service Worker] 🎯 FOCUSING existing window');
-          if ('focus' in client) {
-            await client.focus();
+      try {
+        console.log('[Service Worker] 🚀 Attempting to FORCE OPEN window...');
+        
+        // Check for existing windows
+        const clients = await self.clients.matchAll({ 
+          type: 'window', 
+          includeUncontrolled: true 
+        });
+        
+        let targetClient = null;
+        
+        // Find any user window
+        for (let client of clients) {
+          if (client.url.includes('/user')) {
+            targetClient = client;
+            console.log('[Service Worker] ✅ Found existing user window');
+            break;
           }
+        }
+        
+        // If window exists, FORCE FOCUS multiple times
+        if (targetClient) {
+          console.log('[Service Worker] 💪 FORCING FOCUS on existing window');
+          
+          // Focus aggressively (5 times in a row)
+          for (let i = 0; i < 5; i++) {
+            try {
+              await targetClient.focus();
+              console.log(`[Service Worker] Focus attempt ${i + 1}/5`);
+            } catch (e) {
+              console.warn(`[Service Worker] Focus attempt ${i + 1} failed:`, e.message);
+            }
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
+          
           // Send alert message
-          client.postMessage({
+          targetClient.postMessage({
             type: 'PANIC_ALERT',
             data: notificationData.data,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            forceFocus: true
           });
-          appOpened = true;
-          break;
-        }
-      }
-      
-      // If no window open, OPEN NEW WINDOW
-      if (!appOpened) {
-        console.log('[Service Worker] 🚀 OPENING new window (app was closed)');
-        
-        // Try to open window (this might fail on some browsers/situations)
-        if (self.clients.openWindow) {
-          try {
-            const newClient = await self.clients.openWindow('/user?auto_alert=true&t=' + Date.now());
-            if (newClient) {
-              console.log('[Service Worker] ✅ Window opened successfully');
-              appOpened = true;
+          
+          windowOpened = true;
+        } else {
+          // No window exists - TRY TO OPEN NEW ONE
+          console.log('[Service Worker] 🚀 No window found - OPENING NEW WINDOW');
+          
+          if (self.clients.openWindow) {
+            try {
+              const newClient = await self.clients.openWindow('/user?auto_alert=true&force=1&t=' + Date.now());
+              if (newClient) {
+                console.log('[Service Worker] ✅✅✅ NEW WINDOW OPENED SUCCESSFULLY!');
+                windowOpened = true;
+                
+                // Wait a bit for window to load, then send message
+                setTimeout(() => {
+                  newClient.postMessage({
+                    type: 'PANIC_ALERT',
+                    data: notificationData.data,
+                    timestamp: Date.now(),
+                    forceFocus: true
+                  });
+                }, 800);
+              }
+            } catch (error) {
+              console.error('[Service Worker] ❌ openWindow BLOCKED:', error.message);
+              console.log('[Service Worker] Browser security blocked auto-open - will rely on notification click');
             }
-          } catch (error) {
-            console.warn('[Service Worker] ⚠️ openWindow failed (expected on some browsers):', error.message);
-            // This is expected on some browsers - notification will handle it via click
           }
         }
+      } catch (error) {
+        console.error('[Service Worker] Error in force open:', error);
       }
       
-      // AGGRESSIVE RETRY: Keep trying to focus for next 3 seconds
-      // This handles race conditions and ensures window stays focused
-      if (appOpened) {
+      // STEP 2: Show notification (required for user to click if auto-open failed)
+      await self.registration.showNotification(notificationData.title, notificationData);
+      console.log('[Service Worker] 📢 Notification displayed');
+      
+      // STEP 3: SUPER AGGRESSIVE RETRY - Keep trying to focus for 5 seconds
+      if (windowOpened) {
+        console.log('[Service Worker] 🔄 Starting aggressive focus retry loop...');
+        
         const startTime = Date.now();
-        while (Date.now() - startTime < 3000) {
-          await new Promise(resolve => setTimeout(resolve, 300));
+        let retryCount = 0;
+        
+        while (Date.now() - startTime < 5000) { // 5 seconds
+          await new Promise(resolve => setTimeout(resolve, 200)); // Every 200ms
           
           const clientsAgain = await self.clients.matchAll({ 
             type: 'window', 
@@ -227,30 +262,42 @@ self.addEventListener('push', (event) => {
           });
           
           for (let client of clientsAgain) {
-            if (client.url.includes('/user') && 'focus' in client) {
+            if (client.url.includes('/user')) {
               try {
                 await client.focus();
+                retryCount++;
+                
+                // Keep sending messages
                 client.postMessage({
                   type: 'PANIC_ALERT',
                   data: notificationData.data,
-                  timestamp: Date.now()
+                  timestamp: Date.now(),
+                  forceFocus: true,
+                  retryCount: retryCount
                 });
               } catch (e) {
-                // Ignore focus errors
+                // Silent fail
               }
             }
           }
         }
+        
+        console.log(`[Service Worker] 🎯 Completed ${retryCount} focus attempts in 5 seconds`);
       }
       
-      console.log('[Service Worker] ✅ AUTO-OPEN SEQUENCE COMPLETE');
+      console.log('[Service Worker] ✅ FORCE OPEN SEQUENCE COMPLETE');
+      
+      // STEP 4: If still no success, the notification click handler will handle it
+      if (!windowOpened) {
+        console.log('[Service Worker] ⚠️ Auto-open failed - User MUST click notification');
+      }
     })()
   );
 });
 
-// Notification Click Event - IMMEDIATE OPEN
+// Notification Click Event - GUARANTEED OPEN
 self.addEventListener('notificationclick', (event) => {
-  console.log('[Service Worker] 🚨 Notification clicked - FORCE OPEN');
+  console.log('[Service Worker] 🚨🚨🚨 NOTIFICATION CLICKED - GUARANTEED OPEN');
   
   event.notification.close();
 
@@ -259,8 +306,8 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
 
-  // ALWAYS open/focus app on notification click
-  const urlToOpen = event.notification.data?.url || '/user?auto_alert=true&t=' + Date.now();
+  // ALWAYS open/focus app on notification click - THIS ALWAYS WORKS
+  const urlToOpen = event.notification.data?.url || '/user?auto_alert=true&clicked=1&t=' + Date.now();
   
   event.waitUntil(
     (async () => {
@@ -269,27 +316,45 @@ self.addEventListener('notificationclick', (event) => {
         includeUncontrolled: true 
       });
       
+      console.log(`[Service Worker] Found ${clientList.length} window(s)`);
+      
       // Try to focus existing window first
       for (let client of clientList) {
         if (client.url.includes('/user')) {
-          console.log('[Service Worker] Focusing existing user window');
-          if ('focus' in client) {
-            await client.focus();
+          console.log('[Service Worker] ✅ FOCUSING existing user window from click');
+          
+          // Focus multiple times to ensure it works
+          for (let i = 0; i < 3; i++) {
+            if ('focus' in client) {
+              await client.focus();
+            }
+            await new Promise(resolve => setTimeout(resolve, 50));
           }
+          
           // Send alert trigger
           client.postMessage({
             type: 'PANIC_ALERT',
             data: event.notification.data,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            fromClick: true
           });
+          
+          console.log('[Service Worker] ✅ Existing window focused and message sent');
           return;
         }
       }
       
-      // No window found - open new one
-      console.log('[Service Worker] Opening new window from notification click');
+      // No window found - MUST open new one
+      console.log('[Service Worker] 🚀 No user window found - OPENING NEW WINDOW');
       if (self.clients.openWindow) {
-        await self.clients.openWindow(urlToOpen);
+        const newClient = await self.clients.openWindow(urlToOpen);
+        if (newClient) {
+          console.log('[Service Worker] ✅✅✅ NEW WINDOW OPENED from notification click!');
+        } else {
+          console.error('[Service Worker] ❌ Failed to open new window');
+        }
+      } else {
+        console.error('[Service Worker] ❌ openWindow not supported');
       }
     })()
   );

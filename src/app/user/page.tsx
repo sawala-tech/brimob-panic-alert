@@ -90,15 +90,39 @@ function UserDashboard() {
   // Listen for Service Worker messages (auto-alert trigger)
   useEffect(() => {
     const handleServiceWorkerMessage = (event: MessageEvent) => {
-      console.log('[User Page] 🚨 Service Worker message:', event.data);
+      console.log('[User Page] 🚨🚨🚨 Service Worker message:', event.data);
 
       if (event.data && event.data.type === 'PANIC_ALERT') {
-        // AGGRESSIVE FOCUS: Force window to foreground
+        // MAXIMUM AGGRESSIVE FOCUS: Force window to foreground
         if (typeof window !== 'undefined') {
-          // Try to focus the window (WhatsApp-like behavior)
-          window.focus();
+          console.log('[User Page] 💪 FORCING WINDOW TO FOREGROUND - MAXIMUM MODE');
+          
+          // Try to focus the window MULTIPLE times
+          for (let i = 0; i < 10; i++) {
+            setTimeout(() => {
+              window.focus();
+              console.log(`[User Page] Focus attempt ${i + 1}/10`);
+            }, i * 100);
+          }
 
-          // Request notification permission if not granted (shouldn't happen, but just in case)
+          // Try to bring window to front using various methods
+          try {
+            // Method 1: Standard focus
+            window.focus();
+            
+            // Method 2: Blur then focus (sometimes helps)
+            window.blur();
+            setTimeout(() => window.focus(), 50);
+            
+            // Method 3: Alert the tab (browser shows it in tab switcher)
+            if (document.hidden) {
+              console.log('[User Page] ⚠️ Page is hidden - trying to alert user');
+            }
+          } catch (e) {
+            console.warn('[User Page] Focus methods limited:', e);
+          }
+
+          // Request notification permission if not granted
           if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();
           }
@@ -107,6 +131,7 @@ function UserDashboard() {
           try {
             const audio = new Audio('/alert-sound.mp3');
             audio.volume = 1.0;
+            audio.loop = false;
             audio.play().catch(console.error);
           } catch (e) {
             console.warn('Audio playback not supported or failed');
