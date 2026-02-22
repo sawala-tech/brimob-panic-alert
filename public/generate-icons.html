@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate PNG Icons</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        canvas {
+            border: 2px solid #991b1b;
+            margin: 20px 0;
+            display: block;
+        }
+        button {
+            background: #991b1b;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #b91c1c;
+        }
+        .info {
+            background: #374151;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 BRIMOB Icon Generator</h1>
+        <p>Generate PNG icons untuk PWA aplikasi BRIMOB Panic Alert System</p>
+        
+        <div class="info">
+            <h3>Cara Penggunaan:</h3>
+            <ol>
+                <li>Buka file ini di browser</li>
+                <li>Klik tombol "Generate & Download" untuk setiap ukuran</li>
+                <li>Simpan file di folder <code>public/</code></li>
+            </ol>
+        </div>
+
+        <h2>Icon 192x192</h2>
+        <canvas id="canvas192" width="192" height="192"></canvas>
+        <button onclick="generateIcon(192)">Generate & Download icon-192x192.png</button>
+
+        <h2>Icon 512x512</h2>
+        <canvas id="canvas512" width="512" height="512"></canvas>
+        <button onclick="generateIcon(512)">Generate & Download icon-512x512.png</button>
+    </div>
+
+    <script>
+        function generateIcon(size) {
+            const canvas = document.getElementById(`canvas${size}`);
+            const ctx = canvas.getContext('2d');
+
+            // Background merah
+            ctx.fillStyle = '#991b1b';
+            ctx.fillRect(0, 0, size, size);
+
+            // Emoji police car
+            ctx.font = `${size * 0.5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🚔', size / 2, size / 2);
+
+            // Download
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon-${size}x${size}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Auto generate on load untuk preview
+        window.onload = () => {
+            const canvas192 = document.getElementById('canvas192');
+            const ctx192 = canvas192.getContext('2d');
+            ctx192.fillStyle = '#991b1b';
+            ctx192.fillRect(0, 0, 192, 192);
+            ctx192.font = '96px Arial';
+            ctx192.textAlign = 'center';
+            ctx192.textBaseline = 'middle';
+            ctx192.fillText('🚔', 96, 96);
+
+            const canvas512 = document.getElementById('canvas512');
+            const ctx512 = canvas512.getContext('2d');
+            ctx512.fillStyle = '#991b1b';
+            ctx512.fillRect(0, 0, 512, 512);
+            ctx512.font = '256px Arial';
+            ctx512.textAlign = 'center';
+            ctx512.textBaseline = 'middle';
+            ctx512.fillText('🚔', 256, 256);
+        };
+    </script>
+</body>
+</html>
