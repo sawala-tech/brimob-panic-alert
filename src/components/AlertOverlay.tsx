@@ -66,9 +66,7 @@ export default function AlertOverlay({ alert, onAcknowledge }: AlertOverlayProps
     <div className="fixed inset-0 z-50 bg-red-600 flex items-center justify-center p-4 animate-pulse">
       <div className="max-w-2xl w-full bg-red-700 rounded-2xl shadow-2xl p-8 text-center border-4 border-red-900">
         {/* Warning Icon */}
-        <div className="text-9xl mb-6 animate-bounce">
-          🚨
-        </div>
+        <div className="text-9xl mb-6 animate-bounce">🚨</div>
 
         {/* Alert Title */}
         <h1 className="text-5xl font-black text-white mb-4 uppercase tracking-wider">
@@ -76,9 +74,7 @@ export default function AlertOverlay({ alert, onAcknowledge }: AlertOverlayProps
         </h1>
 
         {/* Alert Message */}
-        <p className="text-2xl font-bold text-white mb-6">
-          {alert.message}
-        </p>
+        <p className="text-2xl font-bold text-white mb-6">{alert.message}</p>
 
         {/* Sender Info */}
         <div className="bg-red-900 rounded-lg p-4 mb-6">

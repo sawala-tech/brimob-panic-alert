@@ -74,7 +74,7 @@ export async function playSiren(): Promise<void> {
     // Start oscillator
     oscillator.start();
     isPlaying = true;
-    
+
     console.log('🚨 Siren started playing!');
 
     // Animate frequency untuk efek siren (naik-turun)

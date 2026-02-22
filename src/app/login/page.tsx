@@ -37,7 +37,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const success = login(username, password);
 
@@ -45,7 +45,7 @@ export default function LoginPage() {
       // Unlock audio context setelah login
       await unlockAudio();
       console.log('✅ Audio unlocked after login');
-      
+
       const currentUser = useAuthStore.getState().user;
       const redirectPath = currentUser?.role === 'admin' ? '/admin' : '/user';
       router.push(redirectPath);
