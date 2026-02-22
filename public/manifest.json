@@ -1,24 +1,65 @@
 {
-  "name": "BRIMOB Alert System",
+  "name": "BRIMOB Panic Alert System",
   "short_name": "BRIMOB Alert",
-  "description": "Panic Alert System untuk Brimob Kepolisian",
-  "start_url": "/",
+  "description": "Real-time Panic Alert System untuk Brimob Kepolisian dengan notifikasi push dan alarm darurat",
+  "start_url": "/login",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#030712",
   "theme_color": "#991b1b",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "categories": ["security", "utilities"],
+  "lang": "id",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/icon-192x192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     },
     {
       "src": "/icon-512x512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard Anggota",
+      "short_name": "Dashboard",
+      "description": "Buka dashboard anggota",
+      "url": "/user",
+      "icons": []
+    },
+    {
+      "name": "Admin Panel",
+      "short_name": "Admin",
+      "description": "Kirim panic alert",
+      "url": "/admin",
+      "icons": []
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded"
+  },
+  "protocol_handlers": []
 }
