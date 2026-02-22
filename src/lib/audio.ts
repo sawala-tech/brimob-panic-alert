@@ -19,45 +19,40 @@ function getAudioContext(): AudioContext {
 }
 
 /**
- * Initialize and unlock audio context (call this on user interaction)
+ * Unlock audio context - dipanggil saat user interaction pertama
  */
-export async function initAudio(): Promise<boolean> {
+export async function unlockAudio(): Promise<void> {
   try {
     const ctx = getAudioContext();
-
     if (ctx.state === 'suspended') {
       await ctx.resume();
-      console.log('[Audio] Context resumed successfully');
     }
-
-    // Play silent sound to unlock audio (iOS fix)
-    const buffer = ctx.createBuffer(1, 1, 22050);
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(ctx.destination);
-    source.start();
-
-    console.log('[Audio] Audio context initialized and unlocked');
-    return true;
-  } catch (error) {
-    console.error('[Audio] Failed to initialize audio:', error);
-    return false;
+    // Play silent sound to unlock
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.01);
+    console.log('✅ Audio context unlocked');
+  } catch (err) {
+    console.warn('❌ Failed to unlock audio:', err);
   }
 }
 
 /**
  * Play siren sound dengan pola naik-turun
  */
-export async function playSiren(): Promise<void> {
+export function playSiren(): void {
   if (isPlaying) return;
 
   try {
     const ctx = getAudioContext();
 
-    // Force resume context (autoplay policy)
+    // Resume context jika suspended (autoplay policy)
     if (ctx.state === 'suspended') {
-      await ctx.resume();
-      console.log('[Audio] Context resumed');
+      ctx.resume();
     }
 
     // Create oscillator
@@ -71,20 +66,17 @@ export async function playSiren(): Promise<void> {
     oscillator.frequency.value = 800;
     oscillator.type = 'sine';
 
-    // Set volume (louder for alert)
-    gainNode.gain.value = 0.5;
+    // Set volume
+    gainNode.gain.value = 0.3;
 
     // Start oscillator
     oscillator.start();
     isPlaying = true;
 
-    console.log('[Audio] Siren started successfully');
-
     // Animate frequency untuk efek siren (naik-turun)
     animateSirenFrequency();
   } catch (error) {
     console.error('Error playing siren:', error);
-    throw error;
   }
 }
 
