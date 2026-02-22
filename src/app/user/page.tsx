@@ -97,12 +97,12 @@ function UserDashboard() {
         if (typeof window !== 'undefined') {
           // Try to focus the window (WhatsApp-like behavior)
           window.focus();
-          
+
           // Request notification permission if not granted (shouldn't happen, but just in case)
           if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();
           }
-          
+
           // Play audio alert if available
           try {
             const audio = new Audio('/alert-sound.mp3');
@@ -111,19 +111,16 @@ function UserDashboard() {
           } catch (e) {
             console.warn('Audio playback not supported or failed');
           }
-          
+
           // Vibrate device if supported (mobile)
           if ('vibrate' in navigator) {
             navigator.vibrate([
-              500, 200, 500, 200, 500, 200,
-              1000, 500,
-              500, 200, 500, 200, 500, 200,
-              1000, 500,
-              500, 200, 500, 200, 500
+              500, 200, 500, 200, 500, 200, 1000, 500, 500, 200, 500, 200, 500, 200, 1000, 500, 500,
+              200, 500, 200, 500,
             ]);
           }
         }
-        
+
         // Trigger alert from Service Worker message
         const alertData: AlertMessage = {
           type: 'panic_alert',
@@ -163,11 +160,11 @@ function UserDashboard() {
 
     if (autoAlert === 'true') {
       console.log('[User Page] 🚀 Auto-alert triggered from URL - AGGRESSIVE MODE');
-      
+
       // FORCE WINDOW TO FOREGROUND (WhatsApp-like)
       if (typeof window !== 'undefined') {
         window.focus();
-        
+
         // Try to play sound immediately
         try {
           const audio = new Audio('/alert-sound.mp3');
@@ -176,15 +173,12 @@ function UserDashboard() {
         } catch (e) {
           console.warn('Audio playback not supported');
         }
-        
+
         // Vibrate immediately
         if ('vibrate' in navigator) {
           navigator.vibrate([
-            500, 200, 500, 200, 500, 200,
-            1000, 500,
-            500, 200, 500, 200, 500, 200,
-            1000, 500,
-            500, 200, 500, 200, 500
+            500, 200, 500, 200, 500, 200, 1000, 500, 500, 200, 500, 200, 500, 200, 1000, 500, 500,
+            200, 500, 200, 500,
           ]);
         }
       }
