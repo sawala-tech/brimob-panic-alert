@@ -2,7 +2,7 @@
  * Root Layout - PWA meta tags dan global styles
  */
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -12,12 +12,15 @@ export const metadata: Metadata = {
   title: "BRIMOB Alert System",
   description: "Panic Alert System untuk Brimob Kepolisian",
   manifest: "/manifest.json",
-  themeColor: "#991b1b",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "BRIMOB Alert",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#991b1b",
 };
 
 export default function RootLayout({

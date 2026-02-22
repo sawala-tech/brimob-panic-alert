@@ -4,14 +4,14 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { AlertMessage } from '@/types';
-import { 
-  subscribeToAlerts, 
+import {
+  subscribeToAlerts,
   subscribeToPushNotifications,
-  getConnectionStatus 
+  getConnectionStatus,
 } from '@/lib/panic-alert-service';
 import Header from '@/components/Header';
 import AlertOverlay from '@/components/AlertOverlay';
@@ -19,13 +19,15 @@ import AlertHistory from '@/components/AlertHistory';
 
 const ALERTS_STORAGE_KEY = 'brimob_user_alerts';
 
-export default function UserPage() {
+function UserDashboard() {
   const { user, isAuthenticated, initAuth } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [alerts, setAlerts] = useState<AlertMessage[]>([]);
   const [activeAlert, setActiveAlert] = useState<AlertMessage | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
+  const [connectionStatus, setConnectionStatus] = useState<
+    'connected' | 'connecting' | 'disconnected'
+  >('connecting');
   const [notificationEnabled, setNotificationEnabled] = useState(false);
 
   // Initialize auth
@@ -62,9 +64,9 @@ export default function UserPage() {
     const unsubscribe = subscribeToAlerts((alert) => {
       console.log('Alert received via WebSocket:', alert);
       setActiveAlert(alert);
-      
+
       // Save to history using functional update to avoid stale closure
-      setAlerts(prevAlerts => {
+      setAlerts((prevAlerts) => {
         const updatedAlerts = [alert, ...prevAlerts];
         localStorage.setItem(ALERTS_STORAGE_KEY, JSON.stringify(updatedAlerts));
         return updatedAlerts;
@@ -89,7 +91,7 @@ export default function UserPage() {
   useEffect(() => {
     const handleServiceWorkerMessage = (event: MessageEvent) => {
       console.log('[User Page] Service Worker message:', event.data);
-      
+
       if (event.data && event.data.type === 'PANIC_ALERT') {
         // Trigger alert from Service Worker message
         const alertData: AlertMessage = {
@@ -98,13 +100,13 @@ export default function UserPage() {
           message: '🚨 PANIC ALERT - SITUASI DARURAT',
           location: 'Command Center',
           timestamp: new Date().toISOString(),
-          severity: 'critical'
+          severity: 'critical',
         };
-        
+
         console.log('[User Page] Triggering alert from Service Worker');
         setActiveAlert(alertData);
-        
-        setAlerts(prevAlerts => {
+
+        setAlerts((prevAlerts) => {
           const updatedAlerts = [alertData, ...prevAlerts];
           localStorage.setItem(ALERTS_STORAGE_KEY, JSON.stringify(updatedAlerts));
           return updatedAlerts;
@@ -127,10 +129,10 @@ export default function UserPage() {
   // Check for auto_alert query parameter (from push notification)
   useEffect(() => {
     const autoAlert = searchParams.get('auto_alert');
-    
+
     if (autoAlert === 'true') {
       console.log('[User Page] Auto-alert triggered from URL');
-      
+
       // Check if there's recent alert in localStorage
       const stored = localStorage.getItem(ALERTS_STORAGE_KEY);
       if (stored) {
@@ -140,7 +142,7 @@ export default function UserPage() {
             // Show most recent alert
             const latestAlert = storedAlerts[0];
             const alertAge = Date.now() - new Date(latestAlert.timestamp).getTime();
-            
+
             // Only show if alert is less than 30 seconds old
             if (alertAge < 30000) {
               console.log('[User Page] Showing recent alert:', latestAlert);
@@ -151,7 +153,7 @@ export default function UserPage() {
           console.error('Error loading recent alert:', error);
         }
       }
-      
+
       // Clean URL (remove auto_alert parameter)
       const url = new URL(window.location.href);
       url.searchParams.delete('auto_alert');
@@ -182,9 +184,7 @@ export default function UserPage() {
     if (activeAlert) {
       // Mark as acknowledged
       const acknowledgedAlert = { ...activeAlert, acknowledged: true };
-      const updatedAlerts = alerts.map((a) =>
-        a.id === activeAlert.id ? acknowledgedAlert : a
-      );
+      const updatedAlerts = alerts.map((a) => (a.id === activeAlert.id ? acknowledgedAlert : a));
       setAlerts(updatedAlerts);
       localStorage.setItem(ALERTS_STORAGE_KEY, JSON.stringify(updatedAlerts));
     }
@@ -201,28 +201,40 @@ export default function UserPage() {
 
       <main className="max-w-4xl mx-auto p-6 space-y-8">
         {/* Connection Status */}
-        <div className={`rounded-lg p-4 border ${
-          connectionStatus === 'connected' 
-            ? 'bg-green-900/20 border-green-900/50' 
-            : connectionStatus === 'connecting'
-            ? 'bg-yellow-900/20 border-yellow-900/50'
-            : 'bg-red-900/20 border-red-900/50'
-        }`}>
+        <div
+          className={`rounded-lg p-4 border ${
+            connectionStatus === 'connected'
+              ? 'bg-green-900/20 border-green-900/50'
+              : connectionStatus === 'connecting'
+                ? 'bg-yellow-900/20 border-yellow-900/50'
+                : 'bg-red-900/20 border-red-900/50'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <span className="relative flex h-3 w-3">
               {connectionStatus === 'connected' && (
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               )}
-              <span className={`relative inline-flex rounded-full h-3 w-3 ${
-                connectionStatus === 'connected' ? 'bg-green-500' : 
-                connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
-              }`}></span>
+              <span
+                className={`relative inline-flex rounded-full h-3 w-3 ${
+                  connectionStatus === 'connected'
+                    ? 'bg-green-500'
+                    : connectionStatus === 'connecting'
+                      ? 'bg-yellow-500'
+                      : 'bg-red-500'
+                }`}
+              ></span>
             </span>
             <div className="flex-1">
-              <p className={`font-semibold ${
-                connectionStatus === 'connected' ? 'text-green-400' : 
-                connectionStatus === 'connecting' ? 'text-yellow-400' : 'text-red-400'
-              }`}>
+              <p
+                className={`font-semibold ${
+                  connectionStatus === 'connected'
+                    ? 'text-green-400'
+                    : connectionStatus === 'connecting'
+                      ? 'text-yellow-400'
+                      : 'text-red-400'
+                }`}
+              >
                 {connectionStatus === 'connected' && '✅ Terhubung ke Server'}
                 {connectionStatus === 'connecting' && '🔄 Menghubungkan...'}
                 {connectionStatus === 'disconnected' && '❌ Tidak Terhubung'}
@@ -242,9 +254,7 @@ export default function UserPage() {
             <div className="flex items-start gap-3">
               <span className="text-3xl">🔔</span>
               <div className="flex-1">
-                <h3 className="text-blue-400 font-bold mb-2">
-                  Aktifkan Notifikasi Push
-                </h3>
+                <h3 className="text-blue-400 font-bold mb-2">Aktifkan Notifikasi Push</h3>
                 <p className="text-blue-200 text-sm mb-4">
                   Terima alert bahkan saat aplikasi ditutup atau HP dalam mode standby
                 </p>
@@ -272,17 +282,14 @@ export default function UserPage() {
 
         {/* Status Section */}
         <div className="bg-gray-800 rounded-lg p-8 text-center border border-gray-700">
-          <div className="text-6xl mb-4">
-            {activeAlert ? '🚨' : '✅'}
-          </div>
+          <div className="text-6xl mb-4">{activeAlert ? '🚨' : '✅'}</div>
           <h2 className="text-2xl font-bold text-white mb-2">
             {activeAlert ? 'ALERT AKTIF!' : 'Tidak ada alert aktif'}
           </h2>
           <p className="text-gray-400">
-            {activeAlert 
-              ? 'Segera cek notifikasi alert' 
-              : 'Menunggu instruksi... Sistem monitoring aktif'
-            }
+            {activeAlert
+              ? 'Segera cek notifikasi alert'
+              : 'Menunggu instruksi... Sistem monitoring aktif'}
           </p>
         </div>
 
@@ -322,9 +329,7 @@ export default function UserPage() {
             </span>
             <div>
               <h3 className="text-green-400 font-bold">Sistem Terhubung</h3>
-              <p className="text-green-300 text-sm">
-                Siap menerima alert dari command center
-              </p>
+              <p className="text-green-300 text-sm">Siap menerima alert dari command center</p>
             </div>
           </div>
         </div>
@@ -334,11 +339,19 @@ export default function UserPage() {
           <div className="flex gap-3">
             <span className="text-2xl">⚠️</span>
             <div className="flex-1">
-              <h3 className="text-yellow-400 font-bold mb-2">Penting - Cara Kerja Real-time Alert</h3>
+              <h3 className="text-yellow-400 font-bold mb-2">
+                Penting - Cara Kerja Real-time Alert
+              </h3>
               <div className="text-yellow-200 text-sm space-y-1">
                 <p>• Alert real-time menggunakan BroadcastChannel (komunikasi antar tab browser)</p>
-                <p>• Pastikan aplikasi dibuka di <strong>browser yang SAMA</strong> (bukan incognito/samaran)</p>
-                <p>• Admin dan User harus di tab/window yang sama browser-nya (contoh: keduanya di Chrome)</p>
+                <p>
+                  • Pastikan aplikasi dibuka di <strong>browser yang SAMA</strong> (bukan
+                  incognito/samaran)
+                </p>
+                <p>
+                  • Admin dan User harus di tab/window yang sama browser-nya (contoh: keduanya di
+                  Chrome)
+                </p>
                 <p>• Jangan gunakan mode incognito/private saat testing</p>
                 <p className="pt-2 text-yellow-300">
                   💡 <strong>Tip:</strong> Buka 2 tab normal di Chrome - Tab 1: Admin, Tab 2: User
@@ -350,12 +363,22 @@ export default function UserPage() {
       </main>
 
       {/* Alert Overlay */}
-      {activeAlert && (
-        <AlertOverlay 
-          alert={activeAlert} 
-          onAcknowledge={handleAcknowledge}
-        />
-      )}
+      {activeAlert && <AlertOverlay alert={activeAlert} onAcknowledge={handleAcknowledge} />}
     </div>
+  );
+}
+
+export default function UserPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⏳</div>
+          <p className="text-white text-xl">Loading...</p>
+        </div>
+      </div>
+    }>
+      <UserDashboard />
+    </Suspense>
   );
 }
