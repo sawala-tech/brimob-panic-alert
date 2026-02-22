@@ -13,6 +13,7 @@ import {
   subscribeToPushNotifications,
   getConnectionStatus,
 } from '@/lib/panic-alert-service';
+import { playSiren } from '@/lib/audio';
 import Header from '@/components/Header';
 import AlertOverlay from '@/components/AlertOverlay';
 import AlertHistory from '@/components/AlertHistory';
@@ -89,7 +90,7 @@ function UserDashboard() {
 
   // Listen for Service Worker messages (auto-alert trigger)
   useEffect(() => {
-    const handleServiceWorkerMessage = (event: MessageEvent) => {
+    const handleServiceWorkerMessage = async (event: MessageEvent) => {
       console.log('[User Page] 🚨🚨🚨 Service Worker message:', event.data);
 
       if (event.data && event.data.type === 'PANIC_ALERT') {
@@ -127,14 +128,12 @@ function UserDashboard() {
             Notification.requestPermission();
           }
 
-          // Play audio alert if available
+          // Play siren using Web Audio API
           try {
-            const audio = new Audio('/alert-sound.mp3');
-            audio.volume = 1.0;
-            audio.loop = false;
-            audio.play().catch(console.error);
+            console.log('[User Page] 🔊 Playing siren from Service Worker trigger');
+            await playSiren();
           } catch (e) {
-            console.warn('Audio playback not supported or failed');
+            console.warn('Failed to play siren:', e);
           }
 
           // Vibrate device if supported (mobile)
@@ -190,13 +189,12 @@ function UserDashboard() {
       if (typeof window !== 'undefined') {
         window.focus();
 
-        // Try to play sound immediately
+        // Play siren using Web Audio API
         try {
-          const audio = new Audio('/alert-sound.mp3');
-          audio.volume = 1.0;
-          audio.play().catch(console.error);
+          console.log('[User Page] 🔊 Playing siren from auto_alert URL');
+          playSiren().catch(console.error);
         } catch (e) {
-          console.warn('Audio playback not supported');
+          console.warn('Failed to play siren:', e);
         }
 
         // Vibrate immediately

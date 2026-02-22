@@ -210,12 +210,13 @@ self.addEventListener('push', (event) => {
             await new Promise(resolve => setTimeout(resolve, 50));
           }
           
-          // Send alert message
+          // Send alert message with PLAY_SIREN command
           targetClient.postMessage({
             type: 'PANIC_ALERT',
             data: notificationData.data,
             timestamp: Date.now(),
-            forceFocus: true
+            forceFocus: true,
+            playSound: true  // ⚠️ Trigger audio playback
           });
           
           windowOpened = true;
@@ -236,7 +237,8 @@ self.addEventListener('push', (event) => {
                     type: 'PANIC_ALERT',
                     data: notificationData.data,
                     timestamp: Date.now(),
-                    forceFocus: true
+                    forceFocus: true,
+                    playSound: true  // ⚠️ Trigger audio playback
                   });
                 }, 800);
               }
