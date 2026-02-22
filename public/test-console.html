@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧪 Auto-Open Test Console</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #991b1b;
+      margin-bottom: 24px;
+      font-size: 32px;
+    }
+    .section {
+      margin: 24px 0;
+      padding: 16px;
+      background: #f9fafb;
+      border-radius: 8px;
+      border-left: 4px solid #991b1b;
+    }
+    .section h2 {
+      color: #333;
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: white;
+      border-radius: 6px;
+      margin: 8px 0;
+      border: 1px solid #e5e7eb;
+    }
+    .status-icon {
+      font-size: 24px;
+    }
+    .status-label {
+      font-weight: 600;
+      flex: 1;
+    }
+    .status-value {
+      font-family: monospace;
+      padding: 4px 8px;
+      background: #f3f4f6;
+      border-radius: 4px;
+    }
+    .success { color: #16a34a; }
+    .error { color: #dc2626; }
+    .warning { color: #ea580c; }
+    button {
+      background: #991b1b;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 8px 8px 8px 0;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: #7f1d1d;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+    }
+    #console {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 16px;
+    }
+    .log-line {
+      padding: 4px 0;
+      border-bottom: 1px solid #334155;
+    }
+    .log-time {
+      color: #64748b;
+      margin-right: 8px;
+    }
+    .log-error { color: #f87171; }
+    .log-warn { color: #fbbf24; }
+    .log-success { color: #4ade80; }
+    .log-info { color: #60a5fa; }
+    .alert-box {
+      background: #fef2f2;
+      border: 2px solid #fca5a5;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    .alert-box strong {
+      color: #991b1b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 BRIMOB Auto-Open Test Console</h1>
+    
+    <div class="section">
+      <h2>📊 System Status</h2>
+      <div class="status">
+        <span class="status-icon">🌐</span>
+        <span class="status-label">Browser</span>
+        <span class="status-value" id="browser"></span>
+      </div>
+      <div class="status">
+        <span class="status-icon">🔒</span>
+        <span class="status-label">Secure Context (HTTPS)</span>
+        <span class="status-value" id="secure"></span>
+      </div>
+      <div class="status">
+        <span class="status-icon">⚙️</span>
+        <span class="status-label">Service Worker Support</span>
+        <span class="status-value" id="sw-support"></span>
+      </div>
+      <div class="status">
+        <span class="status-icon">📡</span>
+        <span class="status-label">Push API Support</span>
+        <span class="status-value" id="push-support"></span>
+      </div>
+      <div class="status">
+        <span class="status-icon">🔔</span>
+        <span class="status-label">Notification Permission</span>
+        <span class="status-value" id="notif-permission"></span>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🔧 Service Worker Status</h2>
+      <div class="status">
+        <span class="status-icon">✅</span>
+        <span class="status-label">Registration</span>
+        <span class="status-value" id="sw-reg"></span>
+      </div>
+      <div class="status">
+        <span class="status-icon">🔄</span>
+        <span class="status-label">State</span>
+        <span class="status-value" id="sw-state"></span>
+      </div>
+      <div class="status">
+        <span class="status-icon">📮</span>
+        <span class="status-label">Push Subscription</span>
+        <span class="status-value" id="push-sub"></span>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🎮 Test Actions</h2>
+      <button id="check-status">🔍 Re-check Status</button>
+      <button id="request-notif">🔔 Request Notification Permission</button>
+      <button id="update-sw">🔄 Update Service Worker</button>
+      <button id="test-notif">🧪 Test Notification</button>
+      <button id="clear-cache">🗑️ Clear Cache & Reload</button>
+    </div>
+
+    <div class="section">
+      <h2>📝 Console Logs</h2>
+      <button id="clear-logs">🧹 Clear Logs</button>
+      <div id="console"></div>
+    </div>
+
+    <div class="alert-box" id="instructions">
+      <strong>📖 Instructions:</strong>
+      <ol style="margin-left: 20px; margin-top: 8px;">
+        <li>Check all statuses are ✅ (green)</li>
+        <li>If Notification Permission is "default", click "Request Notification Permission"</li>
+        <li>If Service Worker not registered, refresh page</li>
+        <li>Click "Test Notification" to test auto-open behavior</li>
+        <li>Check console logs for debugging information</li>
+      </ol>
+    </div>
+  </div>
+
+  <script>
+    const consoleEl = document.getElementById('console');
+    
+    function log(message, type = 'info') {
+      const time = new Date().toLocaleTimeString();
+      const line = document.createElement('div');
+      line.className = `log-line log-${type}`;
+      line.innerHTML = `<span class="log-time">[${time}]</span>${message}`;
+      consoleEl.appendChild(line);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+      
+      // Also log to browser console
+      console.log(`[Test Console] ${message}`);
+    }
+
+    function updateStatus(id, value, isGood = null) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.textContent = value;
+        if (isGood === true) {
+          el.style.color = '#16a34a';
+          el.style.fontWeight = 'bold';
+        } else if (isGood === false) {
+          el.style.color = '#dc2626';
+          el.style.fontWeight = 'bold';
+        }
+      }
+    }
+
+    async function checkStatus() {
+      log('🔍 Checking system status...', 'info');
+
+      // Browser
+      const browser = navigator.userAgent.includes('Chrome') ? 'Chrome' :
+                     navigator.userAgent.includes('Firefox') ? 'Firefox' :
+                     navigator.userAgent.includes('Safari') ? 'Safari' : 'Unknown';
+      updateStatus('browser', browser);
+      log(`Browser: ${browser}`, 'info');
+
+      // Secure context
+      const isSecure = window.isSecureContext;
+      updateStatus('secure', isSecure ? '✅ Yes' : '❌ No', isSecure);
+      log(`Secure context: ${isSecure}`, isSecure ? 'success' : 'error');
+
+      // Service Worker support
+      const swSupport = 'serviceWorker' in navigator;
+      updateStatus('sw-support', swSupport ? '✅ Supported' : '❌ Not supported', swSupport);
+      log(`Service Worker support: ${swSupport}`, swSupport ? 'success' : 'error');
+
+      // Push API support
+      const pushSupport = 'PushManager' in window;
+      updateStatus('push-support', pushSupport ? '✅ Supported' : '❌ Not supported', pushSupport);
+      log(`Push API support: ${pushSupport}`, pushSupport ? 'success' : 'error');
+
+      // Notification permission
+      const notifPerm = 'Notification' in window ? Notification.permission : 'not supported';
+      updateStatus('notif-permission', notifPerm, notifPerm === 'granted');
+      log(`Notification permission: ${notifPerm}`, notifPerm === 'granted' ? 'success' : 'warn');
+
+      // Service Worker registration
+      if (swSupport) {
+        try {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            updateStatus('sw-reg', '✅ Registered', true);
+            updateStatus('sw-state', registration.active?.state || 'unknown');
+            log(`Service Worker registered: ${registration.scope}`, 'success');
+            log(`Service Worker state: ${registration.active?.state}`, 'success');
+
+            // Push subscription
+            const subscription = await registration.pushManager.getSubscription();
+            if (subscription) {
+              updateStatus('push-sub', '✅ Subscribed', true);
+              log(`Push subscription active: ${subscription.endpoint.substring(0, 50)}...`, 'success');
+            } else {
+              updateStatus('push-sub', '❌ Not subscribed', false);
+              log('Push subscription: Not subscribed', 'warn');
+            }
+          } else {
+            updateStatus('sw-reg', '❌ Not registered', false);
+            updateStatus('sw-state', 'N/A');
+            updateStatus('push-sub', 'N/A');
+            log('Service Worker: Not registered', 'error');
+          }
+        } catch (error) {
+          log(`Error checking Service Worker: ${error.message}`, 'error');
+        }
+      }
+
+      log('✅ Status check complete', 'success');
+    }
+
+    // Request notification permission
+    document.getElementById('request-notif').addEventListener('click', async () => {
+      if (!('Notification' in window)) {
+        log('❌ Notifications not supported in this browser', 'error');
+        return;
+      }
+
+      log('🔔 Requesting notification permission...', 'info');
+      try {
+        const permission = await Notification.requestPermission();
+        log(`Permission result: ${permission}`, permission === 'granted' ? 'success' : 'warn');
+        checkStatus();
+      } catch (error) {
+        log(`❌ Error requesting permission: ${error.message}`, 'error');
+      }
+    });
+
+    // Update Service Worker
+    document.getElementById('update-sw').addEventListener('click', async () => {
+      if (!('serviceWorker' in navigator)) {
+        log('❌ Service Worker not supported', 'error');
+        return;
+      }
+
+      log('🔄 Updating Service Worker...', 'info');
+      try {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          await registration.update();
+          log('✅ Service Worker update triggered', 'success');
+          log('ℹ️ Refresh page to see changes', 'info');
+        } else {
+          log('❌ No Service Worker registration found', 'error');
+        }
+      } catch (error) {
+        log(`❌ Error updating Service Worker: ${error.message}`, 'error');
+      }
+    });
+
+    // Test notification
+    document.getElementById('test-notif').addEventListener('click', async () => {
+      if (Notification.permission !== 'granted') {
+        log('❌ Notification permission not granted', 'error');
+        return;
+      }
+
+      log('🧪 Testing notification with auto-open...', 'info');
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        
+        // Simulate push notification
+        await registration.showNotification('🚨 TEST PANIC ALERT', {
+          body: 'Testing auto-open behavior',
+          icon: '/icon-192.png',
+          badge: '/badge-72.png',
+          tag: 'test-alert',
+          requireInteraction: true,
+          vibrate: [500, 200, 500, 200, 500],
+          data: {
+            url: '/user?auto_alert=true&test=1',
+            timestamp: Date.now()
+          },
+          actions: [
+            { action: 'open', title: '🚨 Buka Sekarang' },
+            { action: 'dismiss', title: 'Tutup' }
+          ]
+        });
+        
+        log('✅ Test notification shown', 'success');
+        log('ℹ️ Click notification to test auto-open', 'info');
+      } catch (error) {
+        log(`❌ Error showing notification: ${error.message}`, 'error');
+      }
+    });
+
+    // Clear cache
+    document.getElementById('clear-cache').addEventListener('click', async () => {
+      log('🗑️ Clearing cache...', 'info');
+      
+      // Unregister Service Worker
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+          log('✅ Service Worker unregistered', 'success');
+        }
+      }
+
+      // Clear caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (const name of cacheNames) {
+          await caches.delete(name);
+          log(`✅ Cache deleted: ${name}`, 'success');
+        }
+      }
+
+      log('✅ Cache cleared, reloading...', 'success');
+      setTimeout(() => window.location.reload(true), 1000);
+    });
+
+    // Re-check status
+    document.getElementById('check-status').addEventListener('click', checkStatus);
+
+    // Clear logs
+    document.getElementById('clear-logs').addEventListener('click', () => {
+      consoleEl.innerHTML = '';
+      log('Logs cleared', 'info');
+    });
+
+    // Initial check
+    log('🚀 Test console initialized', 'success');
+    checkStatus();
+
+    // Listen for Service Worker messages
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        log(`📨 Service Worker message: ${JSON.stringify(event.data)}`, 'info');
+      });
+    }
+  </script>
+</body>
+</html>
